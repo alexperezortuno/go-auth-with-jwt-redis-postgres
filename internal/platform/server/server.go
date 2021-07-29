@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/internal/platform/server/handler/auth"
 	"github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/internal/platform/server/handler/health"
 	"github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/internal/platform/server/handler/user"
 	loggingMiddleware "github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/internal/platform/server/middleware/logging_middleware"
@@ -62,6 +63,9 @@ func (s *Server) registerRoutes(context string) {
 	s.engine.GET(fmt.Sprintf("/%s/%s", context, "/health"), health.CheckHandler())
 	s.engine.POST(fmt.Sprintf("/%s/%s", context, "/user"), user.CreateHandler())
 	s.engine.GET(fmt.Sprintf("/%s/%s", context, "/user/:id"), user.GetByIdHandler())
+	s.engine.DELETE(fmt.Sprintf("/%s/%s", context, "/user/:id"), user.RemoveByIdHandler())
+
+	s.engine.POST(fmt.Sprintf("/%s/%s", context, "/auth"), auth.LoginHandler())
 }
 
 func serverContext(ctx context.Context) context.Context {

@@ -6,6 +6,8 @@ require (
 	github.com/badoux/checkmail v1.2.1 // indirect
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-playground/validator/v10 v10.8.0 // indirect
+	github.com/go-redis/redis/v8 v8.11.1 // indirect
+	github.com/golang-jwt/jwt v3.2.1+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/huandu/go-sqlbuilder v1.12.2 // indirect
