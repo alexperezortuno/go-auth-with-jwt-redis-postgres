@@ -45,20 +45,22 @@ func (r *User) Marshal() ([]byte, error) {
 	return json.Marshal(r)
 }
 
-func Hash(password string) ([]byte, error) {
-	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
 }
 
-func VerifyPassword(hashedPassword, password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+func VerifyPassword(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
 
 func (u *User) BeforeSave() error {
-	hashedPassword, err := Hash(u.Password)
+	hashedPassword, err := HashPassword(u.Password)
 	if err != nil {
 		return err
 	}
-	u.Password = string(hashedPassword)
+	u.Password = hashedPassword
 	return nil
 }
 
@@ -207,7 +209,7 @@ func (u *User) UpdateUser(db *gorm.DB, uid uint32) (*User, error) {
 	return u, nil
 }
 
-func (u *User) DeleteAUser(db *gorm.DB, uid uint32) (int64, error) {
+func (u *User) DeleteUser(db *gorm.DB, uid int) (int64, error) {
 
 	db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).Delete(&User{})
 
@@ -216,4 +218,21 @@ func (u *User) DeleteAUser(db *gorm.DB, uid uint32) (int64, error) {
 	}
 
 	return db.RowsAffected, nil
+}
+
+func (u *User) ValidUser(db *gorm.DB, email string, password string) (bool, error) {
+	var err error
+	hash, _ := HashPassword(password)
+	match := VerifyPassword(password, hash)
+
+	if !match {
+		return false, errors.New("username and/or password do not match")
+	}
+
+	err = db.Debug().Model(&User{}).Where("email = ?", email).Take(&u).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, errors.New("user not found")
+	}
+
+	return true, nil
 }

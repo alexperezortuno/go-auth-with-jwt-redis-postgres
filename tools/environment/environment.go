@@ -22,6 +22,10 @@ type ServerValues struct {
 	DbTimeZone      string
 	EngineSql       string
 	TimeZone        string
+	RedisHost       string
+	RedisPort       string
+	RedisPass       string
+	RedisDb         int
 }
 
 func EnvVariable(key string) string {
@@ -39,6 +43,11 @@ func env() {
 func Server() ServerValues {
 	env()
 	port, err := strconv.Atoi(os.Getenv("APP_PORT"))
+	if err != nil {
+		log.Printf("error parsing port")
+		port = 8080
+	}
+
 	host := os.Getenv("APP_HOST")
 	dbHost := os.Getenv("DB_HOST")
 	dbUser := os.Getenv("DB_USER")
@@ -49,10 +58,13 @@ func Server() ServerValues {
 	timeZone := os.Getenv("APP_TIME_ZONE")
 	engineSql := os.Getenv("DB_DRIVER")
 	context := os.Getenv("APP_CONTEXT")
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	redisPass := os.Getenv("REDIS_PASS")
 
+	redisDb, err := strconv.Atoi(os.Getenv("REDIS_DB"))
 	if err != nil {
-		log.Printf("error parsing port")
-		port = 8080
+		redisDb = 0
 	}
 
 	if host == "" {
@@ -95,6 +107,14 @@ func Server() ServerValues {
 		timeZone = "America/Santiago"
 	}
 
+	if redisHost == "" {
+		redisHost = "redis"
+	}
+
+	if redisPort == "" {
+		redisPort = "6379"
+	}
+
 	return ServerValues{
 		Host:            host,
 		Context:         context,
@@ -106,6 +126,10 @@ func Server() ServerValues {
 		DbPass:          dbPass,
 		DbName:          dbName,
 		DbTimeZone:      dbTimeZone,
+		RedisHost:       redisHost,
+		RedisPort:       redisPort,
+		RedisPass:       redisPass,
+		RedisDb:         redisDb,
 		ShutdownTimeout: 10 * time.Second,
 		EngineSql:       engineSql,
 	}

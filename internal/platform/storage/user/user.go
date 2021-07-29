@@ -88,3 +88,14 @@ func GetById(id int) (model.UserResponse, string) {
 
 	return userCopy, errResp
 }
+
+func RemoveById(id int) (string, string) {
+	user := model.User{}
+	_, err := user.DeleteUser(db.Connection, id)
+	if err != nil {
+		log.Printf("Error %s", err.Error())
+		return "", err.Error()
+	}
+
+	return "", ""
+}
