@@ -39,3 +39,4 @@
 out
 gen
 go.sum
+build/*
