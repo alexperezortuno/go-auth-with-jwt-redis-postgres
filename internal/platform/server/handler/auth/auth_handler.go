@@ -2,12 +2,13 @@ package auth
 
 import (
 	"github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/internal/platform/storage/auth"
+	"github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/internal/platform/storage/redis_db"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 )
 
-func LoginHandler() gin.HandlerFunc {
+func LoginHandler(redisDb *redis_db.Database) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req auth.AuthRequest
 
@@ -17,9 +18,21 @@ func LoginHandler() gin.HandlerFunc {
 			return
 		}
 
-		_, _ = auth.ValidateUser(req)
-		ctx.JSON(http.StatusOK, gin.H{
-			"token": "...",
-		})
+		response, err := auth.ValidateUser(req, redisDb)
+		if err != "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"status":  false,
+				"message": err,
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, response)
+	}
+}
+
+func VerifyHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, true)
 	}
 }

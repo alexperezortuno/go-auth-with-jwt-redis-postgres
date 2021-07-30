@@ -8,6 +8,7 @@ import (
 	"github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/internal/platform/server/handler/user"
 	loggingMiddleware "github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/internal/platform/server/middleware/logging_middleware"
 	recovery "github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/internal/platform/server/middleware/recovery_middleware"
+	"github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/internal/platform/storage/redis_db"
 	"github.com/alexperezortuno/go-auth-with-jwt-redis-postgres/kit/command"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -24,7 +25,15 @@ type Server struct {
 	commandBus      command.Bus
 }
 
-func New(ctx context.Context, host string, port uint, context string, shutdownTimeout time.Duration, commandBus command.Bus) (context.Context, Server) {
+func New(
+	ctx context.Context,
+	host string,
+	port uint,
+	context string,
+	shutdownTimeout time.Duration,
+	commandBus command.Bus,
+	redisdb *redis_db.Database,
+) (context.Context, Server) {
 	srv := Server{
 		engine:          gin.New(),
 		httpAddr:        fmt.Sprintf("%s:%d", host, port),
@@ -33,7 +42,7 @@ func New(ctx context.Context, host string, port uint, context string, shutdownTi
 	}
 
 	log.Println(fmt.Sprintf("Check app in %s:%d/%s/%s", host, port, context, "health"))
-	srv.registerRoutes(context)
+	srv.registerRoutes(context, redisdb)
 	return serverContext(ctx), srv
 }
 
@@ -57,7 +66,7 @@ func (s *Server) Run(ctx context.Context) error {
 	return srv.Shutdown(ctxShutDown)
 }
 
-func (s *Server) registerRoutes(context string) {
+func (s *Server) registerRoutes(context string, redisDb *redis_db.Database) {
 	s.engine.Use(loggingMiddleware.Middleware(), gin.Logger(), recovery.Middleware())
 
 	s.engine.GET(fmt.Sprintf("/%s/%s", context, "/health"), health.CheckHandler())
@@ -65,7 +74,7 @@ func (s *Server) registerRoutes(context string) {
 	s.engine.GET(fmt.Sprintf("/%s/%s", context, "/user/:id"), user.GetByIdHandler())
 	s.engine.DELETE(fmt.Sprintf("/%s/%s", context, "/user/:id"), user.RemoveByIdHandler())
 
-	s.engine.POST(fmt.Sprintf("/%s/%s", context, "/auth"), auth.LoginHandler())
+	s.engine.POST(fmt.Sprintf("/%s/%s", context, "/auth"), auth.LoginHandler(redisDb))
 }
 
 func serverContext(ctx context.Context) context.Context {

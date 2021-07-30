@@ -20,7 +20,7 @@ type User struct {
 	Nickname  string    `gorm:"size:50;null;unique" json:"nickname"`
 	IdCard    string    `gorm:"size:30;not null;unique" json:"id_card"`
 	Email     string    `gorm:"size:100;not null;unique" json:"email"`
-	Password  string    `gorm:"size:100;not null;" json:"password"`
+	Password  string    `gorm:"size:250;not null;" json:"password"`
 	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
@@ -50,7 +50,7 @@ func HashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
-func VerifyPassword(password, hash string) bool {
+func VerifyPassword(password string, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
@@ -163,6 +163,21 @@ func (u *User) FindAllUsers(db *gorm.DB) (*[]User, error) {
 	return &users, err
 }
 
+func (u *User) FindUserByEmail(db *gorm.DB, email string) (*User, error) {
+	var err error
+	err = db.Debug().Model(User{}).Where("email = ?", email).Take(&u).Error
+
+	if err != nil {
+		return &User{}, err
+	}
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return &User{}, errors.New("user not found")
+	}
+
+	return u, err
+}
+
 func (u *User) FindUserByID(db *gorm.DB, uid int) (*User, error) {
 	var err error
 	err = db.Debug().Model(User{}).Where("id = ?", uid).Take(&u).Error
@@ -222,16 +237,16 @@ func (u *User) DeleteUser(db *gorm.DB, uid int) (int64, error) {
 
 func (u *User) ValidUser(db *gorm.DB, email string, password string) (bool, error) {
 	var err error
-	hash, _ := HashPassword(password)
-	match := VerifyPassword(password, hash)
+	user, err := u.FindUserByEmail(db, email)
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, errors.New("user not found")
+	}
+
+	match := VerifyPassword(password, user.Password)
 
 	if !match {
 		return false, errors.New("username and/or password do not match")
-	}
-
-	err = db.Debug().Model(&User{}).Where("email = ?", email).Take(&u).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return false, errors.New("user not found")
 	}
 
 	return true, nil

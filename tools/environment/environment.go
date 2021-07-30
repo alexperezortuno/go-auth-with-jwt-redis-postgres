@@ -28,10 +28,6 @@ type ServerValues struct {
 	RedisDb         int
 }
 
-func EnvVariable(key string) string {
-	return os.Getenv(key)
-}
-
 func env() {
 	env := os.Getenv("APP_ENV")
 
@@ -48,71 +44,23 @@ func Server() ServerValues {
 		port = 8080
 	}
 
-	host := os.Getenv("APP_HOST")
-	dbHost := os.Getenv("DB_HOST")
-	dbUser := os.Getenv("DB_USER")
-	dbPass := os.Getenv("DB_PASS")
-	dbPort := os.Getenv("DB_PORT")
-	dbName := os.Getenv("DB_NAME")
-	dbTimeZone := os.Getenv("DB_TIME_ZONE")
-	timeZone := os.Getenv("APP_TIME_ZONE")
-	engineSql := os.Getenv("DB_DRIVER")
-	context := os.Getenv("APP_CONTEXT")
-	redisHost := os.Getenv("REDIS_HOST")
-	redisPort := os.Getenv("REDIS_PORT")
-	redisPass := os.Getenv("REDIS_PASS")
+	host := getEnv("APP_HOST", "localhost")
+	dbHost := getEnv("DB_HOST", "db")
+	dbUser := getEnv("DB_USER", "postgres")
+	dbPass := getEnv("DB_PASS", "postgres")
+	dbPort := getEnv("DB_PORT", "5432")
+	dbName := getEnv("DB_NAME", "dbauth")
+	dbTimeZone := getEnv("DB_TIME_ZONE", "America/Santiago")
+	timeZone := getEnv("APP_TIME_ZONE", "America/Santiago")
+	engineSql := getEnv("DB_DRIVER", "postgres")
+	context := getEnv("APP_CONTEXT", "api")
+	redisHost := getEnv("REDIS_HOST", "redis")
+	redisPort := getEnv("REDIS_PORT", "6380")
+	redisPass := getEnv("REDIS_PASS", "123")
 
-	redisDb, err := strconv.Atoi(os.Getenv("REDIS_DB"))
+	redisDb, err := strconv.Atoi(getEnv("REDIS_DB", "0"))
 	if err != nil {
 		redisDb = 0
-	}
-
-	if host == "" {
-		host = "localhost"
-	}
-
-	if context == "" {
-		context = "api"
-	}
-
-	if dbHost == "" {
-		dbHost = "db"
-	}
-
-	if dbPort == "" {
-		dbPort = "5432"
-	}
-
-	if dbUser == "" {
-		dbUser = "postgres"
-	}
-
-	if dbPass == "" {
-		dbPass = "postgres"
-	}
-
-	if dbName == "" {
-		dbName = "dbauth"
-	}
-
-	if engineSql == "" {
-		engineSql = "postgres"
-	}
-
-	if dbTimeZone == "" {
-		dbTimeZone = "America/Santiago"
-	}
-
-	if timeZone == "" {
-		timeZone = "America/Santiago"
-	}
-
-	if redisHost == "" {
-		redisHost = "redis"
-	}
-
-	if redisPort == "" {
-		redisPort = "6379"
 	}
 
 	return ServerValues{
@@ -133,4 +81,12 @@ func Server() ServerValues {
 		ShutdownTimeout: 10 * time.Second,
 		EngineSql:       engineSql,
 	}
+}
+
+func getEnv(envName, valueDefault string) string {
+	value := os.Getenv(envName)
+	if value == "" {
+		return valueDefault
+	}
+	return value
 }
